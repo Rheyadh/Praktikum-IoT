@@ -49,7 +49,7 @@ void sendMessage() {
   Serial.println(msg);
 }
 
-// Callback otomatis saat menerima pesan dari node manapun di jaringan mesh
+// Callback otomatis saat menerima pesan dari node manapun di jaringan mesh dengan filter suhu kritis
 void receivedCallback(uint32_t from, String &msg) {
   // Parsing muatan teks JSON yang diterima
   StaticJsonDocument<200> doc;
@@ -61,11 +61,17 @@ void receivedCallback(uint32_t from, String &msg) {
     float suhu        = doc["suhu"];
     float kelembapan  = doc["kelembapan"];
 
-    Serial.println("========================================");
-    Serial.printf("[TERIMA DARI] %s (Node ID: %u | Chip ID: %u)\n", sender, from, chipId);
-    Serial.printf("Suhu       : %.2f °C\n", suhu);
-    Serial.printf("Kelembapan : %.2f %%\n", kelembapan);
-    Serial.println("========================================");
+    // Logika Pengawas Kondisi Suhu Kritis (> 32.0 °C)
+    if (suhu > 32.0) {
+      Serial.println("========================================");
+      Serial.printf("[PERINGATAN] Suhu Kritis dari %s (Chip ID: %u)\n", sender, chipId);
+      Serial.printf("Suhu       : %.2f °C (TINGGI!)\n", suhu);
+      Serial.printf("Kelembapan : %.2f %%\n", kelembapan);
+      Serial.println("========================================");
+    } else {
+      // Jika suhu normal (<= 32.0 °C)
+      Serial.printf("[NORMAL] Telemetri dari Node %u aman (Suhu: %.2f °C)\n", chipId, suhu);
+    }
   } else {
     Serial.printf("[TERIMA DATA MENTAH DARI %u]: %s\n", from, msg.c_str());
   }
